@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.ems.backend.dto.EmployeeDTO;
 import com.ems.backend.entity.Employee;
 import com.ems.backend.exception.EmployeeNotFoundException;
 import com.ems.backend.repository.EmployeeRepository;
@@ -18,47 +19,104 @@ public class EmployeeService {
     }
 
     // Get all employees
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public List<EmployeeDTO> getAllEmployees() {
+
+        return employeeRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
     }
 
     // Add employee
-    public Employee addEmployee(Employee employee) {
-        return employeeRepository.save(employee);
+    public EmployeeDTO addEmployee(EmployeeDTO employeeDTO) {
+
+        Employee employee = convertToEntity(employeeDTO);
+
+        Employee savedEmployee =
+                employeeRepository.save(employee);
+
+        return convertToDTO(savedEmployee);
     }
 
     // Get employee by ID
-    public Employee getEmployeeById(Long id) {
-        return employeeRepository.findById(id)
-                .orElseThrow(() ->
-                        new EmployeeNotFoundException(
-                                "Employee with ID " + id + " not found"));
+    public EmployeeDTO getEmployeeById(Long id) {
+
+        Employee employee =
+                employeeRepository.findById(id)
+                        .orElseThrow(() ->
+                                new EmployeeNotFoundException(
+                                        "Employee with ID "
+                                                + id
+                                                + " not found"
+                                )
+                        );
+
+        return convertToDTO(employee);
     }
 
     // Update employee
-    public Employee updateEmployee(Long id, Employee employeeDetails) {
+    public EmployeeDTO updateEmployee(
+            Long id,
+            EmployeeDTO employeeDTO) {
 
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() ->
-                        new EmployeeNotFoundException(
-                                "Employee with ID " + id + " not found"));
+        Employee employee =
+                employeeRepository.findById(id)
+                        .orElseThrow(() ->
+                                new EmployeeNotFoundException(
+                                        "Employee with ID "
+                                                + id
+                                                + " not found"
+                                )
+                        );
 
-        employee.setName(employeeDetails.getName());
-        employee.setAge(employeeDetails.getAge());
-        employee.setSalary(employeeDetails.getSalary());
-        employee.setEmail(employeeDetails.getEmail());
+        employee.setName(employeeDTO.getName());
+        employee.setAge(employeeDTO.getAge());
+        employee.setSalary(employeeDTO.getSalary());
+        employee.setEmail(employeeDTO.getEmail());
 
-        return employeeRepository.save(employee);
+        Employee updatedEmployee =
+                employeeRepository.save(employee);
+
+        return convertToDTO(updatedEmployee);
     }
 
     // Delete employee
     public void deleteEmployee(Long id) {
 
         if (!employeeRepository.existsById(id)) {
+
             throw new EmployeeNotFoundException(
-                    "Employee with ID " + id + " not found");
+                    "Employee with ID "
+                            + id
+                            + " not found"
+            );
         }
 
         employeeRepository.deleteById(id);
+    }
+
+    // Convert Entity to DTO
+    private EmployeeDTO convertToDTO(Employee employee) {
+
+        return new EmployeeDTO(
+                employee.getId(),
+                employee.getName(),
+                employee.getAge(),
+                employee.getSalary(),
+                employee.getEmail()
+        );
+    }
+
+    // Convert DTO to Entity
+    private Employee convertToEntity(EmployeeDTO employeeDTO) {
+
+        Employee employee = new Employee();
+
+        employee.setName(employeeDTO.getName());
+        employee.setAge(employeeDTO.getAge());
+        employee.setSalary(employeeDTO.getSalary());
+        employee.setEmail(employeeDTO.getEmail());
+
+        return employee;
     }
 }
